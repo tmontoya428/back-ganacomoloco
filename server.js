@@ -30,6 +30,10 @@ app.use('/api/history', historyRoutes);
 app.use('/api/winners', winnersRoutes);
 app.use('/api/admin', adminRegistrationRoutes);
 
+app.get('/', (req, res) => {
+    res.send('El servidor está corriendo correctamente.');
+});
+
 // Manejador de rutas no encontradas (404)
 app.use((req, res, next) => {
     res.status(404).json({ msg: 'Ruta no encontrada' });
