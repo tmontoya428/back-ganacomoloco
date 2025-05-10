@@ -61,4 +61,4 @@ app.use((req, res) => {
 
 // Exportar como función serverless
 module.exports = app;
-module.exports.handler = serverless(app);
+module.exports.handler = require('serverless-http')(app);
