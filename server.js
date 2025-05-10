@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const serverless = require('serverless-http');
 
 const registerUserRoutes = require('./routes/registerUserRoutes');
 const loginRoutes = require('./routes/loginRoutes');
@@ -13,38 +14,51 @@ const adminRegistrationRoutes = require('./routes/adminRegistrationRoutes');
 dotenv.config();
 const app = express();
 
-// Middleware
+// CORS
+const allowedOrigins = [
+  'https://front-loco.vercel.app',
+  'http://localhost:5173'
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json());
-app.use(cors());
 
-// Conexión a MongoDB
+// MongoDB
 mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log('MongoDB Connected'))
-    .catch(err => console.error('MongoDB connection error:', err));
+  .then(() => console.log('MongoDB Connected'))
+  .catch(err => console.error('MongoDB connection error:', err));
 
-// Configuración de rutas
+// Rutas
+app.get('/api', (req, res) => {
+  res.send('back loco en vivo');
+});
+
 app.use('/api/register', registerUserRoutes);
-app.use('/api/login', loginRoutes); // Asegúrate de que esta línea esté presente
+app.use('/api/login', loginRoutes);
 app.use('/api/register-code', registerCodeRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/winners', winnersRoutes);
 app.use('/api/admin', adminRegistrationRoutes);
 
-app.get('/', (req, res) => {
-    res.send('El servidor está corriendo correctamente.');
+// Rutas no encontradas
+app.use((req, res) => {
+  res.status(404).json({ msg: 'Ruta no encontrada' });
 });
 
-// Manejador de rutas no encontradas (404)
-app.use((req, res, next) => {
-    res.status(404).json({ msg: 'Ruta no encontrada' });
-});
-
-// Manejador de errores genérico
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ msg: 'Error interno del servidor' });
-});
-
-// Configuración del servidor
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Exportar como función serverless
+module.exports = app;
+module.exports.handler = serverless(app);
